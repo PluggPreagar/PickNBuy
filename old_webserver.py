@@ -4,7 +4,7 @@ import urllib
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 
-from crawler import scanAndSave
+from old_crawler import scanAndSave
 
 
 # Define the HTTP request handler class
@@ -26,7 +26,7 @@ class MyHandler(BaseHTTPRequestHandler):
         # Send response status code
         self.send_response(200)
 
-        with open('data.csv', 'r', encoding='utf8') as file:
+        with open('cache/data.csv', 'r', encoding='utf8') as file:
             data_csv = file.read()
 
         # Send headers
@@ -75,7 +75,8 @@ class MyHandler(BaseHTTPRequestHandler):
         for data_row in data_csvs:
             data_elem = data_row.split(" ")
             if len(data_elem) < 2:
-                print(" SKIPP2")
+                None
+                # print(" SKIPP2")
             elif "" != data_elem[0]:
                 response += "</div>"
                 response += "<div class='d_block'>"
@@ -89,7 +90,8 @@ class MyHandler(BaseHTTPRequestHandler):
                 # print(" " + itm_div)
                 response += itm_div + '\n'
             else:
-                print (" SKIPP")
+                None
+                # print (" SKIPP")
             # print(" -")
         response += "</div>"
         # print(" --")
