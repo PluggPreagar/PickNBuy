@@ -48,26 +48,29 @@ class MyHandler(BaseHTTPRequestHandler):
             response = file.read()
 
         response += "<div class='d_block'>"
-        data = coordinator.Coordinator().process(param_url, "")
-        for data_row in data.split("\n"):
-            data_elem = data_row.split(" ")
-            if len(data_elem) < 2:
-                None
-                # print(" SKIPP2")
-            elif "" != data_elem[0]:
-                response += "</div>"
-                response += "<div class='d_block'><br>" + data_elem[0] + " " + data_elem[1] + "<br>"
-            elif "" != data_elem[2]:
-                price = data_elem[2]
-                img = data_elem[3]
-                lnk = data_elem[4]
-                itm_div = '<!--' + price + ' ---><div class="d_img"><a href="' + lnk + '"><img src="' + img + '"/><div class="d_price">' + price + '</div></a></div>'
-                # print(" " + itm_div)
-                response += itm_div + '\n'
-            else:
-                None
-                # print (" SKIPP")
-            # print(" -")
+        data = coordinator.Coordinator().query(param_url, "")
+        if data is None:
+            print("gui: NO DATA")
+        else:
+            for data_row in data.split("\n"):
+                data_elem = data_row.split(" ")
+                if len(data_elem) < 2:
+                    None
+                    # print(" SKIPP2")
+                elif "" != data_elem[0]:
+                    response += "</div>"
+                    response += "<div class='d_block'><br>" + data_elem[0] + " " + data_elem[1] + "<br>"
+                elif "" != data_elem[2]:
+                    price = data_elem[2]
+                    img = data_elem[3]
+                    lnk = data_elem[4]
+                    itm_div = '<!--' + price + ' ---><div class="d_img"><a href="' + lnk + '"><img src="' + img + '"/><div class="d_price">' + price + '</div></a></div>'
+                    # print(" " + itm_div)
+                    response += itm_div + '\n'
+                else:
+                    None
+                    # print (" SKIPP")
+                # print(" -")
         response += "</div>"
         # print(" --")
         self.wfile.write(response.encode())

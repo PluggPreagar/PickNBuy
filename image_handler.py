@@ -13,23 +13,20 @@ class ImageHandler():
 
     def __init__(self):
         self.cache = Cache()
-        self.cache.cache_dir = "cache_img"
+        self.cache.cache_dir = "cache_img/"
         self.cacheResize = Cache()
-        self.cacheResize.cache_dir = "cache_img_resize"
+        self.cacheResize.cache_dir = "cache_img_resize/"
 
     def finger_print(self, url):
-        img_resize = self.cacheResize.get(url)
-        if img_resize is None:
+        img_fingerprint = self.cacheResize.get(url)
+        if img_fingerprint is None:
             img = self.cache.get(url)
             if img is None:
-                img = self.cache.write( url, requests.get(url))
-            img_name = self.cache.file_name(url)
-            img_resize_name = self.cacheResize.file_name(url)
-            self.resize_image( img_resize_name, img_name )
-            img_fingerprint = self.image_fingerprint( img_resize_name)
-            return self.cacheResize.write( url, img_fingerprint )
-        else:
-            return img_resize
+                self.cache.write( url, requests.get(url).content, 'b')
+            img_resize_name = self.resize_image(self.cache.file_name(url), self.cacheResize.file_name(url))
+            img_fingerprint = self.cacheResize.write( url, self.image_fingerprint( img_resize_name) )
+        print("FP: " + img_fingerprint + " for " + url)
+        return img_fingerprint
 
     def resize_image(self, filename, fileNameResized):
         img = Image.open(filename)
