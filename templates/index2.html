@@ -9,31 +9,12 @@
                 var val = data;
 
                 itm_div = '';
-                data.priceVB = data.price.includes("VB") ? "VB":"";
-                data.price = data.price.replace(" VB","");
-                k="href";
-                itm_div += '<a class="d_' + k + '" href="' + data[k] + '">';
-                for ( var k in data ) {
-                    if ( null == data[k] ) {
-                    } else if ( "img" == k ) {
-                        itm_div += '<img class="d_' + k + '" src="' + data[k] + '"/>';
-                    } else if ( data[k].startsWith("http") ) {
-                        // itm_div += '<a class="d_' + k + '" href="' + data[k] + '"></a>';
-                    } else  {
-                        itm_div += '<div class="d_' + k + '">' + data[k] + '</div>';
-                    }
-                    // console.debug( k + " -> " + data[k] );
-                }
-                itm_div += '</a>';
-                /*
-                itm_div = '';
                 itm_div += '<a   class="d_href" href="' + val[img_lnk_idx] + '">"';
                 itm_div += '<img class="d_img" src="' + val[img_src_idx] + '"/>';
                 itm_div += '<div class="d_price">' + val[price_idx].replace(" VB","") + '</div>';
                 itm_div += '<div class="d_priceVB">' + (val[price_idx].includes("VB") ? "VB":"") + '</div>';
                 itm_div += '<div class="d_idx">' + val[key_idx] + '</div>';
                 itm_div += '</a>';
-                */
                 //
                 var newElement = document.createElement('div');
                 newElement.classList.add("d_offer");
@@ -57,7 +38,7 @@
                             setTimeout(pollData, 10);
                         }
                     };
-                    xhr.open("GET", "/json?idx=" + data_idx , true);
+                    xhr.open("GET", "/data?idx=" + data_idx , true);
                     xhr.send();
                 } // if liveUpdate
             }
