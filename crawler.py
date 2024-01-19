@@ -7,6 +7,7 @@ class Crawler:
     def __init__(self):
         self.cache = Cache()
         self.cache.cache_dir = "cache_html/"
+        self.cache.force = 0  # ensure caching ..
 
     def crawl(self, url):
         content = self.cache.read(url)
@@ -21,3 +22,4 @@ class Crawler:
             # Sicherstellen, dass die Anfrage erfolgreich war
             return self.cache.write(url, response.text) if response.status_code == 200 else None
         return content
+

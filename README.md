@@ -17,6 +17,14 @@ Define an HTML with javascript to handle that.
 Part 4 is the coordinator it is started by the web interface and uses Part 1 to receive pages and follows the 
 next-page link.
 
+
+ - Ordering in Frontend - as we do not want to reload just for re-ordering ...
+ - m
+
+ - x 
+
+
+
 # Architecture
 
 ```mermaid
@@ -25,7 +33,25 @@ graph LR
     Extractor --> Data
     Crawler --> Extractor
 ```
+usage GUI
+```mermaid
+zenuml
+    title 2step Query
+    GUI->Server: query with filter
+    Server->GUI: current data
+    show {
+    }
+    opt {
+        Server->Crawler: update data
+        Crawler->Server
+        Server->GUI: add new data
+        resort
+    }
+    
+```
 
+
+Caching in every step. Allow fast and quiet adjusting w/o re-requesting data.
 ```mermaid
 graph LR
     GUI(GUI) --> Coordinator{Coordinator}
@@ -38,4 +64,14 @@ graph LR
     Crawler --> Cache
     Cache --> FileSystem
 ```
+
+wordCount [ a-word ]
+
+words [ < a-word > ] = [ key1, key2 ... ]
+
+data [ key ] = [ key, val1 , val2 ,... ]
+
+dupl - do not add same key multiple times to word
+
+
 

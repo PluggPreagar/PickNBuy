@@ -1,6 +1,99 @@
-<html><head><style>
+<script>
+    var data_idx = 0;
+
+            function addData( responseText ) { // id img_lnk descr price hash
+                console.debug( responseText );
+
+                key_idx = 0 ; img_src_idx=1; img_lnk_idx=2; descr_idx=3; price_idx=4;
+                var data = JSON.parse( responseText);
+                var val = data;
+
+                itm_div = '';
+                itm_div += '<a   class="d_href" href="' + val[img_lnk_idx] + '">"';
+                itm_div += '<img class="d_img" src="' + val[img_src_idx] + '"/>';
+                itm_div += '<div class="d_price">' + val[price_idx].replace(" VB","") + '</div>';
+                itm_div += '<div class="d_priceVB">' + (val[price_idx].includes("VB") ? "VB":"") + '</div>';
+                itm_div += '<div class="d_idx">' + val[key_idx] + '</div>';
+                itm_div += '</a>';
+                //
+                var newElement = document.createElement('div');
+                newElement.classList.add("d_offer");
+                newElement.classList.add("sortableDiv");
+                newElement.innerHTML = itm_div;
+                document.getElementById("datas").appendChild(newElement);
+            }
+
+            function pollData() {
+                if (document.getElementById('liveUpdate').checked) {
+                    var d = new Date();
+                    var datestring = ("0" + d.getDate()).slice(-2) + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" +
+                            d.getFullYear() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) +
+                            ":" + ("0" + d.getSeconds()).slice(-2);
+                    document.getElementById('liveUpdateLabel').innerHTML="liveUpdate " + datestring;
+                    var xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            addData( xhr.responseText);
+                            data_idx=data_idx+1;
+                            setTimeout(pollData, 10);
+                        }
+                    };
+                    xhr.open("GET", "/data?idx=" + data_idx , true);
+                    xhr.send();
+                } // if liveUpdate
+            }
+            setInterval(pollData, 5000);
+</script>
+<html>
+
+    <script>
+      function sortDivElements() {
+        var container = document.getElementById("datas");
+        var divList = Array.prototype.slice.call(container.getElementsByClassName("sortableDiv"));
+        var sortKeys = (document.getElementById("sortKeys").value + " d_price:n").split(" ");
+        for(let i = 0; i < sortKeys.length; i++) {
+            if(!sortKeys[i].startsWith("d_")) {
+                sortKeys[i] = "d_" +sortKeys[i];
+            }
+        }
+
+        divList.sort(function (a, b) {
+            for (let key of sortKeys) {
+              if ("" != key) {
+                var keyNum = key.includes(":n");
+                if (keyNum) {
+                    key = key.replace(":n","");
+                }
+                var a_ = a.getElementsByClassName(key);
+                var aKey = undefined == a_ || a_.length < 1 ? "" : a_[0].innerText;
+                var b_ = b.getElementsByClassName(key);
+                var bKey = undefined == b_ || b_.length < 1 ? "" : b_[0].innerText;
+                if (aKey == bKey) {
+                } else if (keyNum) {
+                    aKey = aKey.replace(".","");
+                    bKey = bKey.replace(".","");
+                    return 1*aKey < 1*bKey ? -1 : 1 ;
+                } else {
+                    return aKey.localeCompare(bKey);
+                } // diff
+              } // key
+            } // keys
+            return 0; // If all keys are equal
+        });
+
+        container.innerHTML = "";
+        for (var i = 0; i < divList.length; i++) {
+          container.appendChild(divList[i]);
+        }
+      }
+
+    </script>
+
+<head>
+    <style>
                    .d_img {  float: left; }
-                   .d_block {  float: left; }
+                   .d_offer {  float: left; }
+                   .d_idx { display: none}
                    img {
                       border: 1px solid #ddd;
                       border-radius: 4px;
@@ -25,14 +118,27 @@
                         }
 
                 </style>
-          </head><body><h1>Welcome to My Web Server!</h1>
+</head>
+<body>
+<h1>Welcome to My Web Server!</h1>
 <div id="head">
     <form action="/check" method="get">
-        <input type="text" id="lname2" name="lname" value="https://www.kleinanzeigen.de/s-preis:20:/l%C3%B6tstation/k0" size="100"><br><br>
+        <input type="text" id="lname2" name="lname" value="param_url" size="100"><br><br>
+        <input type="checkbox" id="liveUpdate" name="liveUpdate" value="liveUpdate"><label id="liveUpdateLabel" for="liveUpdate">liveUpdate</label><br>
         <input type="submit" value="Submit">
     </form>
-</div>
+
+    <form onsubmit="event.preventDefault(); sortDivElements();">
+        <input type="text" id="sortKeys" name="sortKeys" value="" size="100"><br><br>
+        <input type="submit" value="Sort Div Elements">
+    </form>
+
+    </div>
+
 <div id="body">
+    <div id="datas" >
+
+    </div>
     <!--
 </div>
 </body></html>

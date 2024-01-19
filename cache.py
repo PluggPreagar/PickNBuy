@@ -8,15 +8,15 @@ import re
 class Cache:
     def __init__(self):
         self.cache_dir = "cache/"
-        self.force = 1
+        self.force = 0
 
     def file_name(self, url):
         if re.match("\\.JPG", url) or self.cache_dir.startswith("cache_img"):
             return self.cache_dir + re.sub(r"[^a-zA-Z.0-9]", "_", re.sub(r".*/", "", url), 100)
-        return self.cache_dir + re.sub("[a-zA-Z0-9]", "_", re.sub(r"https*://w*.*?/.*", "", url)) \
-            + hashlib.sha256(url.encode("utf-8")).hexdigest() + ".html"
+        return self.cache_dir + re.sub("[^a-zA-Z0-9]+", "_", re.sub(r"https*://w*(.*?)/.*", "\\1", url)) \
+            + hashlib.sha256(url.encode("utf-8")).hexdigest() + re.sub(r".*(\..{1,4})$|.*", "\\1", url)
 
-    def get(self, url, mode='r'):
+    def get(self, url, mode=''):
         return self.read(url, mode) if self.exists(url) else None
 
     def exists(self, url):
@@ -43,6 +43,8 @@ class Cache:
         if content is None:
             print("cache: NONE " + self.file_name(url))
             return content
+        if 'b' != mode:
+            content = str(content)
         # Write the content to cache file
         print("cache: write " + self.file_name(url))
         with open(self.file_name(url), 'w' + mode, encoding='utf8' if '' == mode else None) as file:
