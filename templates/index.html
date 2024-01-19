@@ -39,7 +39,22 @@
                 newElement.classList.add("d_offer");
                 newElement.classList.add("sortableDiv");
                 newElement.innerHTML = itm_div;
+                newElement.id = data['key'];
                 document.getElementById("datas").appendChild(newElement);
+
+                // add toggler
+                for ( var k in data ) {
+                    key = "ctrl_"+k;
+                    if ( null == document.getElementById( key)) {
+                        newElement = document.createElement('div');
+                        newElement.id = key;
+                        newElement.classList.add("ctrlDiv");
+                        newElement.setAttribute("onclick","changeClassCss( '.d_" + k + "', 'display', 'none', 'block');");
+                        newElement.innerHTML = k;
+                        document.getElementById("ctrl").appendChild(newElement);
+                    }
+                }
+
             }
 
             function pollData() {
@@ -106,6 +121,27 @@
         }
       }
 
+        //  changeClassCss( ".element", "display", "none");
+        function changeClassCss( cssSelector, prop, val, val2 ) {
+            const stylesheet = document.styleSheets[0];
+            let elementRules = null;
+            for(let i = 0; i < stylesheet.cssRules.length; i++) {
+              if(stylesheet.cssRules[i].selectorText === cssSelector) {
+                elementRules = stylesheet.cssRules[i];
+                if (null != val2) {
+                   val = val == elementRules.style.getPropertyValue(prop) ? val2 : val;
+                }
+                elementRules.style.setProperty(prop, val);
+
+              }
+            }
+            if (null == elementRules){
+                stylesheet.insertRule( cssSelector + " {" + prop + ": " + val + "}", 1);
+                stylesheet.addRule( cssSelector ,  prop + ": " + val , 1);
+            }
+
+        }
+
     </script>
 
 <head>
@@ -113,6 +149,7 @@
                    .d_img {  float: left; }
                    .d_offer {  float: left; }
                    .d_idx { display: none}
+                   .hidden { display: none}
                    img {
                       border: 1px solid #ddd;
                       border-radius: 4px;
@@ -153,7 +190,8 @@
     </form>
 
     </div>
-
+<div id="ctrl">
+</div>
 <div id="body">
     <div id="datas" >
 
