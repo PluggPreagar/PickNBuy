@@ -168,6 +168,25 @@ class MyHandler(BaseHTTPRequestHandler):
                 response = file.read()
             self.wfile.write(response)
             return
+        if self.path == '/style.css':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/css')
+            self.end_headers()
+            response = ""
+            with open('static/style.css', 'rb') as file:
+                response = file.read()
+            self.wfile.write(response)
+            return
+        if self.path == '/util.js':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text')
+            self.end_headers()
+            response = ""
+            with open('static/util.js', 'rb') as file:
+                response = file.read()
+            self.wfile.write(response)
+            return
+
 
         # https: // www.kleinanzeigen.de / s - preis: 20: / seite: 2 / l % C3 % B6tstation / k0
         url = "https://www.kleinanzeigen.de/s-preis:20:/l%C3%B6tstation/k0"
