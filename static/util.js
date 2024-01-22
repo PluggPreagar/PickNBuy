@@ -73,15 +73,24 @@ console.debug("loaded util.js")
                 click+ctrl -> toggle display
             */
             function ctrl_clk( event, elem, k ) {
-                if ( null == event || event.ctrlKey ) {
+                if ( null == event ) {
+                    changeClassCss( "." + k, 'display', 'none', 'block');
+                    elem.classList.toggle("ctrlDivDisabled");
+                } else if ( event.shiftKey && event.ctrlKey ) {
+                    var k_ = k.startsWith("d_") ? k.substring(2) : k;
+                    changeClassCss( "." + k, 'display', 'none', 'none'); // enforce hidden
+                    elem.classList.toggle("ctrlDivGrouped");
+                    document.getElementById("sortKeys").value = document.getElementById("sortKeys").value + " " + k_ + ":G";
+                    sortDivElements();
+                } else if ( event.ctrlKey ) {
                     changeClassCss( "." + k, 'display', 'none', 'block');
                     elem.classList.toggle("ctrlDivDisabled");
                 } else if ( event.shiftKey ) {
-                    k_ = k.startsWith("d_") ? k.substring(2) : k;
+                    var k_ = k.startsWith("d_") ? k.substring(2) : k;
                     document.getElementById("sortKeys").value = document.getElementById("sortKeys").value + " " + k_;
                     sortDivElements();
                 } else {
-                    k_ = k.startsWith("d_") ? k.substring(2) : k;
+                    var k_ = k.startsWith("d_") ? k.substring(2) : k;
                     document.getElementById("sortKeys").value = k_;
                     sortDivElements();
                 }
@@ -116,10 +125,17 @@ console.debug("loaded util.js")
       function sortDivElements() {
         var container = document.getElementById("datas");
         var divList = Array.prototype.slice.call(container.getElementsByClassName("sortableDiv"));
-        var sortKeys = (document.getElementById("sortKeys").value + " price").split(" ");
+        var sortKeys = (document.getElementById("sortKeys").value + " price:n").split(" ");
+        var groupKeys = [];
         for(let i = 0; i < sortKeys.length; i++) {
-            if(!sortKeys[i].startsWith("d_")) {
-                sortKeys[i] = "d_" +sortKeys[i];
+            if (sortKeys[i].length > 3 ){
+                if(!sortKeys[i].startsWith("d_")) {
+                    sortKeys[i] = "d_" +sortKeys[i];
+                }
+                if(sortKeys[i].endsWith(":G")) {
+                    sortKeys[i] = sortKeys[i].replace(":G","");
+                    groupKeys.push(sortKeys[i]);
+                }
             }
         }
 
@@ -131,6 +147,7 @@ console.debug("loaded util.js")
                 if (keyNum) {
                     key = key.replace(":n","");
                 }
+                key = key.replace(":G",""); // remove Grouping hint -->  Sort-it, show only Once and hide following ...
                 var a_ = a.getElementsByClassName(key);
                 var aKey = undefined == a_ || a_.length < 1 ? "" : a_[0].innerText;
                 var b_ = b.getElementsByClassName(key);
@@ -148,10 +165,44 @@ console.debug("loaded util.js")
             return 0; // If all keys are equal
         });
 
+        // [ div , div , div ]
+        // div-Group1 ( val1 ) >    [   div-Group2 ( val2.1 ) >  [ div , div ] ,  div-Group2 ( val2.2 ) >  div   ]
+        var divGroupedList = [ document.createElement('div') ]; // Base 1 !!!! - root == [0]
+        for (var i = 0; i < divList.length; i++) {
+            // handle grouping - show group-header, hide repeats ...
+            // check if matches current group - already sorted !!!
+            //   -> if it is not matching
+            for (var groupKey_i = 1; groupKey_i <= groupKeys.length; groupKey_i++) { // Base 1 !!!! - root == [0]
+                val_div = divList[ i ].getElementsByClassName( groupKeys[ groupKey_i - 1 /* Base1->Base0 */] )[0] ;
+                val = null == val_div ? "" : val_div.innerText;
+                group_div = divGroupedList[ groupKey_i ];
+                // 1. new / 2. matches val / 3. changed val
+                if ( null == group_div || null == group_div.firstChild || val.trim() != group_div.firstChild.innerText.trim() /*for some reason sometimes spaces skipped*/ ) { // changed or new
+                    group_div = document.createElement('div'); // neue group
+                    group_div.classList.add("d_group");
+                    group_div.innerHTML = val_div.outerHTML ; // clone value for group ...
+                    group_div.firstChild.classList.add("d_group_val");
+                    divGroupedList[ groupKey_i - 1 ].appendChild( group_div ); // build tree up to root ...
+                    divGroupedList[ groupKey_i ] = group_div; // build short ref to current branch
+                    divGroupedList[ groupKey_i + 1 ] = null; // invalidate - force diff in next level
+                    //
+                }
+            } // build grouping-path
+            group_div.appendChild( divList[ i ] );
+        } // group all divs ...
+
+        if (divGroupedList.length > 0) {
+            divList = [ divGroupedList[0] ];
+        }
+        // show
         container.innerHTML = "";
         for (var i = 0; i < divList.length; i++) {
-          container.appendChild(divList[i]);
+            container.appendChild(divList[i]);
         }
+
+        // --------------------------------------------------------------
+
+
       }
 
         //  changeClassCss( ".element", "display", "none");

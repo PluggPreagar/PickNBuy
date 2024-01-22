@@ -56,6 +56,10 @@ form {
     color: gray;
     background: white;
 }
+.ctrlDivGrouped {
+    color: white;
+    background: green;
+}
 
 .d_img {
     float: left;
@@ -73,6 +77,26 @@ form {
 	border: 1px black solid;
 	border-radius: 5px;
 }
+
+.d_group{
+    float: left;
+    border: 1px lightgrey solid;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 10px;
+}
+
+.d_group:hover{
+    border-color: green;
+}
+
+
+.d_group_val{
+    float: left;
+    display: block; /* overrule suppressing values on item-level */
+}
+
+
 .d_idx { display: none}
 .hidden { display: none}
 
