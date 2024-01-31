@@ -6,6 +6,8 @@
     </style>
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="util.js"></script>
+    <script src="util_load.js"></script>
+    <script src="util_gui.js"></script>
 </head>
 <body>
 <div id="head" style="width: 100%">
@@ -14,7 +16,9 @@
         <input type="text" id="lname2" name="lname" value="param_url" size="100"><br>
         <div class="ctrl_info" >use live-update to load if blank</div>
         <input type="submit" class="button" value="Submit">
-        <input type="checkbox" id="liveUpdate" name="liveUpdate" value="liveUpdate"><label id="liveUpdateLabel" for="liveUpdate">liveUpdate</label>
+        <input type="checkbox" id="refresh" name="refresh" value="refresh"><label id="refreshLabel" for="refresh">refresh</label>
+        <input type="checkbox" id="liveUpdate" name="liveUpdate" onclick="pollData();" value="liveUpdate"><label id="liveUpdateLabel" for="liveUpdate">liveUpdate</label>
+
     </form>
 
     <form onsubmit="event.preventDefault(); sortDivElements();">
@@ -24,6 +28,12 @@
             <div id="ctrl_info" class="ctrl_info" >click to sort, shift to add for sort, ctrl + shift to group and ctrl to un/hide</div>
         </div>
     </form>
+
+    <script>
+        setTimeout(pollData__, 1000);
+    </script>
+
+
 
 
 </div>

@@ -24,25 +24,25 @@ class Extractor:
     #   read/cache image
     #   create/cache downsize version
     #   fingerprint downsize version
-    def extract(self, url):
-        print("xtrct: try " + url + " ")
+    def extract(self, url, refresh_Flag):
+        print("extractor::extract try " + url + " ")
         content = self.cache.read(url)
-        data_str = self.cache.read(url + ".data") # load dictonary
-        data_ = ast.literal_eval(data_str) if data_str is not None else None # load dictonary
-        if content is None or data_ is None:
+        data_str = self.cache.read(url + ".data") # load dictionary
+        data_ = ast.literal_eval(data_str) if data_str is not None else None # load dictionary
+        if content is None or data_ is None or refresh_Flag:
             # https://www.kleinanzeigen.de/s-preis:20:/l%C3%B6tstation/k0
             # https://www.kleinanzeigen.de/s-preis:20:/seite:2/l%C3%B6tstation/k0
             content = self.crawler.crawl(url)
-            print("xtrct: got " + url)
+            print("extractor::extract got " + url)
             #
-            word_count_, words_, data_ = self.extract_internal(url, content) # fills data etc ...
+            word_count_, words_, data_, data_csv_head_, data_csv_ = self.extract_internal(url, content) # fills data etc ...
             #
-            print("xtrct: sav " + url)
+            print("extractor::extract sav " + url)
             # Sicherstellen, dass die Anfrage erfolgreich war
             self.cache.write(url, content)
             self.cache.write(url + ".data", data_)
             # clone as csv ...
-            data_csv = ""
+            data_csv = str(data_csv_head_).lstrip('[').rstrip(']') + "\n"
             for key in data_:
                 data_csv += str(data[ key ]).lstrip('[').rstrip(']') + "\n" # fake csv from list-to-string
             self.cache.write( url + ".csv", data_csv)
@@ -63,9 +63,11 @@ class Extractor:
             img_lnk = urljoin(url, img.parent.parent.get("href"))
             img_lnk_elms = (str(img_lnk) + "/////").split("/")
             key = img_lnk_elms[5]
-            print("xtrct: " + key + "          " + img_txt)
+            print("extractor::extract_i " + key + "          " + img_txt)
+            data_csv_head = ["key", "img", "img_lnk", "descr", "price", "img_hash", "idx"]
+            data_csv = dict()
             # add further
-            img_fingerprint = self.img_handler.finger_print(img_src)
+            img_hash = self.img_handler.finger_print(img_src)
             # get item
             item = img.parent.parent.parent.parent
             descr = item.find_all("p", class_="aditem-main--middle--description")
@@ -74,14 +76,12 @@ class Extractor:
                 descr_text = re.sub(r"[\s\r\n]+", " ", str(descr[0].text), 0, re.MULTILINE)
                 price_text = re.sub(r"[\s\r\n]+", " ", str(price[0].text), 0, re.MULTILINE)
                 #
-                print("xtrct:    >>key      " + str(key))
-                print("xtrct:    >>img      " + str(img_fingerprint))
-                print("xtrct:    >>img_src  " + str(img_src))
-                print("xtrct:    >>img_lnk  " + str(img_lnk))
-                print("xtrct:    >>descr    " + str(descr_text))
-                print("xtrct:    >>price    " + str(price_text))
-                #
-                data[key] = [key, img_src, img_lnk, descr_text, price_text.replace(" €",""), img_fingerprint]
+                data_csv_ = [key, img_src, img_lnk, descr_text, price_text.replace(" €",""), img_hash]
+                data_dict = dict(zip(data_csv_head, data_csv_))
+                data_json = json.dumps(data_dict)
+                print("extractor::extract_i    " + key + " " + data_json)
+                data[key] = data_dict
+                data_csv[ key ] = data_csv_
                 #
                 dupl = []
                 for word in (img_txt + " " + descr[0].text).split(" "):
@@ -96,7 +96,7 @@ class Extractor:
             else:
                 None
                 # print ("SKIPP: " + img.text)
-        return word_count, words, data
+        return word_count, words, data, data_csv_head, data_csv
 
 
 # wordCount [ a-word ]
@@ -107,4 +107,4 @@ class Extractor:
 
 word_count = {}
 words = {}
-data = {}
+data = {}  # TODO remove ....

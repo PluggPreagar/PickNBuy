@@ -14,7 +14,7 @@ class Cache:
         if re.match("\\.JPG", url) or self.cache_dir.startswith("cache_img"):
             return self.cache_dir + re.sub(r"[^a-zA-Z.0-9]", "_", re.sub(r".*/", "", url), 100)
         return self.cache_dir + re.sub("[^a-zA-Z0-9]+", "_", re.sub(r"https*://w*(.*?)/.*", "\\1", url)) \
-            + hashlib.sha256(url.encode("utf-8")).hexdigest() + re.sub(r".*(\..{1,4})$|.*", "\\1", url)
+            + hashlib.sha256(url.encode("utf-8")).hexdigest() + re.sub(r".*(\.[^.]{1,6})$|.*", "\\1", url)
 
     def get(self, url, mode=''):
         return self.read(url, mode) if self.exists(url) else None

@@ -92,7 +92,8 @@ form {
 
 
 .d_group_val{
-    float: left;
+    /* float: left; */
+    float: none;
     display: block; /* overrule suppressing values on item-level */
 }
 

@@ -22,12 +22,12 @@ def background_operation(url, url_filter, result_queue):
     print("gui   : background_operation for \"" + url + "\"")
     data = coordinator.Coordinator().query(url, url_filter)
     print("gui   : background_operation ...")
-    time.sleep(2)
-    print("gui   : background_operation ...")
-    time.sleep(2)
-    print("gui   : background_operation ...")
-    time.sleep(2)
-    print("gui   : background_operation DONE")
+    #time.sleep(2)
+    #print("gui   : background_operation ...")
+    #time.sleep(2)
+    #print("gui   : background_operation ...")
+    #time.sleep(2)
+    #print("gui   : background_operation DONE")
     # Add result to the queue
     result_queue.put(data)
 
@@ -109,35 +109,61 @@ class MyHandler(BaseHTTPRequestHandler):
             print("result_idx >>" + data_idx + " EOF (" + str(len(data)) + ")" )
         self.wfile.write("".encode())
         # id img_lnk descr price hash
-    def do_get_data_jsonNamed(self, data_idx):
+
+
+    def do_get_data_jsonNamed(self, data_idx, data_qry, data_refresh_flag):
+        data_idx_range = data_idx.split("..")
         new_data = f"New Data at {int(time.time())}"
         # Send the new data as a JSON response
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        new_data="{'reifen', 'https://static.kleinanzeigen.de/static/img/common/illustrations/connection-issue.vfwgydoqmp1t.svg', 'https://www.kleinanzeigen.de/s-preis:20:/seite:1/reifen', 'Sehr geehrte Kunden, Herzlich Willkommen bei HolzBM GmbH! Ihr Einzel- und Großhändler für...', ' 380', None }"
-        new_data='{"data": ["reifen", "https://static.kleinanzeigen.de/static/img/common/illustrations/connection-issue.vfwgydoqmp1t.svg", "https://www.kleinanzeigen.de/s-preis:20:/seite:1/reifen", "Sehr geehrte Kunden, Herzlich Willkommen bei HolzBM GmbH! Ihr Einzel- und Großhändler für...", " 380", None ]}'
-        new_data='["reifen", "https://static.kleinanzeigen.de/static/img/common/illustrations/connection-issue.vfwgydoqmp1t.svg", "https://www.kleinanzeigen.de/s-preis:20:/seite:1/reifen", "Sehr geehrte Kunden, Herzlich Willkommen bei HolzBM GmbH! Ihr Einzel- und Großhändler für...", " 380", "None" ]'
-        new_data='["1988775235-87-16235", "https://img.kleinanzeigen.de/api/v1/prod-ads/images/05/05e538c8-1942-479d-b7d1-ee62a7df66c9?rule=$_2.JPG", "https://www.kleinanzeigen.de/s-anzeige/kaminholz-heinsberg-pellets-holzbriketts-brandhout-brennholz-/1988775235-87-16235", "Sehr geehrte Kunden, Herzlich Willkommen bei HolzBM GmbH! Ihr Einzel- und Großhändler für...", " 380", "f374ad747602e41ca1fe4dddd1268341"]'
         #
-        #
-
-        new_data = coordinator.Coordinator().cache.read("https://www.kleinanzeigen.de/s-preis:20:/seite:9/l%C3%B6tstation/k0" + ".query")
+        param_url = urllib.parse.unquote(data_qry)
+        new_data = coordinator.Coordinator().cache.read(param_url + ".query")
+        if new_data is None or data_refresh_flag :
+            print("gui::jsonName:  data_qry=\"" + param_url + "\"")
+            create_task(param_url, "" + ( "refresh" if data_refresh_flag else ""  ) )
         #new_data = coordinator.Coordinator().cache.read("https://www.kleinanzeigen.de/s-preis:20:/seite:9/l%C3%B6tstation/k0" + ".csv")
-        data = ast.literal_eval(new_data)
-        json_data = json.dumps( data )
-        json_data = json.dumps( data['2621952793-168-807'])
-        if int(data_idx) < len(data):
-            key = list(data)[int(data_idx)]
-            print("result_idx >>" + data_idx + " >> " + key)
-            data[key].append(data_idx)  # just add index as dummy val
-            data_ = dict(zip( ["key", "img", "img_lnk", "descr", "price","key2", "idx"] , data[key]))
-            json_data = json.dumps(data_)
-
-            #
-            self.wfile.write(json_data.encode())
+        # json_data = json.dumps( data )
+        # json_data = json.dumps( data['2621952793-168-807'])
+        if new_data is None:
+            print("gui::jsonName: result_idx >>" + " loading ... ")
         else:
-            print("result_idx >>" + data_idx + " EOF (" + str(len(data)) + ")" )
+            # data = ast.literal_eval(new_data) #
+            # data = json.load(new_data)  # AttributeError: 'str' object has no attribute 'read'
+            data = json.loads(new_data)
+            if 1 == len(data_idx_range) and int(data_idx) < len(data):
+                key = list(data)[int(data_idx)]
+                print("gui::jsonName: result_idx >>" + data_idx + " >> " + key)
+                # data[key].append(data_idx)  # just add index as dummy val
+                # data_ = dict(zip( ["key", "img", "img_lnk", "descr", "price","img_hash", "idx"] , data[key]))
+                # json_data = json.dumps(data_)
+                json_data = data[key]
+                json_data["idx"] = data_idx # blend in current index for loading ...
+                #
+                # self.wfile.write(json_data.encode())   # AttributeError: 'dict' object has no attribute 'encode'
+                self.wfile.write( json.dumps( json_data ).encode() ) #TypeError: a bytes-like object is required, not 'str'
+                print("gui::jsonName: result_idx >>" + data_idx + " ... ")
+            elif 2 == len(data_idx_range) and int(data_idx_range[0]) < len(data) and int(data_idx_range[0]) < int(data_idx_range[1]):
+                j_str = ""
+                json_array=[]
+                data_idx=int(data_idx_range[0])
+                keys = list(data)[int(data_idx_range[0]):int(data_idx_range[1])]
+                for key in keys:
+                    print("gui::jsonName: result_idx >>" + str(data_idx) + " >> " + key)
+                    # print("gui::jsonName: result_idx >>" + str(data) )
+                    json_data = {}
+                    json_data = data[key]
+                    json_data["idx"] = data_idx  # blend in current index for loading ...
+                    json_array.append( json_data )
+                    data_idx += 1
+                # self.wfile.write(json_data.encode())   # AttributeError: 'dict' object has no attribute 'encode'
+                self.wfile.write( json.dumps( json_array ).encode() ) #TypeError: a bytes-like object is required, not 'str'
+                print("gui::jsonName: result_idx >>" + data_idx_range[0] + " ... " + data_idx_range[1] )
+
+            else:
+                print("gui::jsonName: result_idx >>" + data_idx + " EOF (" + str(len(data)) + ")" )
         self.wfile.write("".encode())
         # id img_lnk descr price hash
 
@@ -177,12 +203,12 @@ class MyHandler(BaseHTTPRequestHandler):
                 response = file.read()
             self.wfile.write(response)
             return
-        if self.path == '/util.js':
+        if self.path == '/util.js' or self.path == '/util_load.js' or self.path == '/util_gui.js' :
             self.send_response(200)
             self.send_header('Content-Type', 'text')
             self.end_headers()
             response = ""
-            with open('static/util.js', 'rb') as file:
+            with open('static/' + self.path, 'rb') as file:
                 response = file.read()
             self.wfile.write(response)
             return
@@ -192,9 +218,6 @@ class MyHandler(BaseHTTPRequestHandler):
         url = "https://www.kleinanzeigen.de/s-preis:20:/l%C3%B6tstation/k0"
         if re.match(".*/check.*", self.requestline):
             print("gui   : check \"" + url + "\"")
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
             query = urlparse(self.path).query
             query_components = dict(qc.split("=") for qc in query.split("&"))
             lname = query_components["lname"]
@@ -211,7 +234,7 @@ class MyHandler(BaseHTTPRequestHandler):
             # self.do_get_data()
             query = urlparse(self.path).query
             query_components = dict(qc.split("=") for qc in query.split("&")) if query.count("=") > 0 else {}
-            self.do_get_data_jsonNamed( query_components["idx"] )
+            self.do_get_data_jsonNamed( query_components["idx"], query_components["qry"], (("refresh" in query_components) and ("1"==query_components["refresh"]))  )
         else:
             print("gui   : ELSE \"" + url + "\"")
             self.send_response(200)
@@ -224,73 +247,14 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def do_check(self, param_url):
 
-        with open("templates/index.html", 'r') as file:
-            response = file.read()
-
-        response = response.replace("param_url", param_url)
-        response += "<div class='d_block'>"
-
         create_task(param_url, "")
 
-        # data = coordinator.Coordinator().query(param_url, "")
-        data = None
-        print("1")
-        task_result()
-        print("2")
-        if results is not None:
-            print("3")
-            if len(results) > 0:
-                print("4")
-                data = results[0]
-
-        # wordCount [ a-word ]
-        # words [ <a-word> ] = [ key1, key2 ... ]
-        # data [ key ] = [ <key>, <val1> , <val2> ,... ]
-        # dupl - do not add same key multiple times to word
-        #
-        # filter most relevant words
-        #        order by price, image-hash
-        #
-        # data[key] = [key, img_src, img_lnk, descr_text, price_text, img_fingerprint]
-        key_idx = 0
-        img_src_idx = 1
-        img_lnk_idx = 2
-        descr_idx = 3
-        price_idx = 4
-        #
-        #
-        #
-        #
-        print("gui  :   ")
-        if data is None:
-            print("gui  : NO DATA")
-        else:
-            x = 0
-            for t in data:
-                print("gui  : " + t)
-                if ++x > 10:
-                    print("gui  : " + "...")
-                    break;
-
-            data_key_sorted = sorted(data,
-                                     key=lambda x: str(int(re.sub(r"[^0-9,]", "", data[x][price_idx])) + 100000) + " " +
-                                                   x[0] if len(data[x]) >= 3 and not "" == re.sub(r"[^0-9,]", "",
-                                                                                                  data[x][
-                                                                                                      price_idx]) else '-')  # sort by price
-            response += "</div>"
-            response += "<div class='d_block'><br>" + "_" + " " + "_" + "<br>"
-            for key in data_key_sorted:
-                val = data[key]
-                if len(val) >= 5:
-                    itm_div = '<!--' + val[price_idx] + ' ---><div class="d_img"><a href="' + val[
-                        img_lnk_idx] + '"><img src="' + val[img_src_idx] + '"/><div class="d_price">' + val[
-                                  price_idx] + '</div></a></div>'
-                    # print("       " + itm_div)
-                    response += itm_div + '\n'
-                else:
-                    print("gui  : SKIPP " + val[0] if len(val) > 0 else '---')
-        response += "</div>"
-        # print(" --")
-        self.wfile.write(response.encode())
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        with open("templates/index.html", 'r') as file:
+            response = file.read()
+        response = response.replace("param_url", param_url)
+        return self.wfile.write(response.encode())
         # print(" ---")
         print("gui  : DONE")
